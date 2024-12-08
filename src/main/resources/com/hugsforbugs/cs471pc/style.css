@@ -1,0 +1,91 @@
+.root {
+    -fx-background-color: rgba(0, 0, 0, 0.82);
+}
+
+
+.grid-pane {
+    -fx-background-color: #4B5945;
+    -fx-padding: 10;
+    -fx-border-color: #66785F;
+    -fx-border-width: 2;
+}
+
+.label {
+    -fx-text-fill: #FFFFFF;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-alignment: center;
+}
+
+.button {
+    -fx-background-color: #4B5945;
+    -fx-text-fill: #FFFFFF;
+    -fx-border-color: #66785F;
+    -fx-border-width: 2;
+    -fx-padding: 8;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+}
+
+.button:hover {
+    -fx-background-color: #91AC8F;
+    -fx-text-fill: #000000;
+}
+.text-field{
+    -fx-background-color: #4B5945;
+    -fx-text-fill: #FFFFFF;
+    -fx-border-color: #66785F;
+    -fx-border-width: 2;
+    -fx-padding: 8;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+    -fx-alignment: Center;
+}
+.progress-bar {
+    -fx-accent: #4B5945;
+    -fx-control-inner-background: #1A1A1D;
+    -fx-border-color: #66785F;
+    -fx-border-radius: 5px;
+    -fx-border-width: 2px;
+    -fx-border-radius: 5px;
+}
+
+
+.scroll-pane {
+    -fx-background-color: #1A1A1D;
+    -fx-border-color: #66785F;
+    -fx-border-width: 2;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+}
+
+.scroll-pane .viewport {
+    -fx-background-color: transparent;
+}
+
+.scroll-pane .scroll-bar:horizontal,
+.scroll-pane .scroll-bar:vertical {
+    -fx-background-color: #66785F;
+    -fx-border-radius: 5;
+}
+
+.scroll-pane .thumb {
+    -fx-background-color: #66785F;
+    -fx-background-radius: 5;
+}
+.progress-bar:indeterminate {
+    -fx-accent: #FF0000;
+}
+.Delete-button:hover {
+    -fx-background-color: #ff0000;
+    -fx-text-fill: #000000;
+}
+
+
+.grid-pane .label {
+    -fx-background-color: transparent;
+}

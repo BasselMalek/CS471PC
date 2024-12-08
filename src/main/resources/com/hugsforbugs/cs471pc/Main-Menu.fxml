@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="624.0" prefWidth="847.0" stylesheets="@style.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.hugsforbugs.cs471pc.MainMenuController">
+   <children>
+      <Button layoutX="24.0" layoutY="64.0" mnemonicParsing="false" onAction="#addNewEntry" prefHeight="40.0" prefWidth="138.0" text="ADD" />
+      <Button layoutX="678.0" layoutY="64.0" mnemonicParsing="false" prefHeight="40.0" prefWidth="138.0" text="ADD Batch" />
+      <Button id="Delete-button" layoutX="678.0" layoutY="517.0" mnemonicParsing="false" onAction="#DeleteEntry" prefHeight="40.0" prefWidth="138.0" styleClass="Delete-button" text="Delete" />
+      <Button layoutX="678.0" layoutY="451.0" mnemonicParsing="false" prefHeight="40.0" prefWidth="138.0" text="Pause" />
+      <Button layoutX="14.0" layoutY="471.0" mnemonicParsing="false" prefHeight="66.0" prefWidth="209.0" text="Open Downloads Folder" />
+    <AnchorPane layoutX="177.0" layoutY="353.0" minHeight="0.0" minWidth="0.0" prefHeight="200.0" prefWidth="200.0" />
+      <ScrollPane layoutX="-3.0" layoutY="232.0" prefHeight="214.0" prefWidth="842.0">
+         <content>
+            <GridPane fx:id="progressGrid" prefHeight="303.0" prefWidth="838.0">
+              <columnConstraints>
+                <ColumnConstraints hgrow="SOMETIMES" maxWidth="246.4000244140625" minWidth="10.0" prefWidth="206.4000244140625" />
+                <ColumnConstraints hgrow="SOMETIMES" maxWidth="272.8000122070313" minWidth="10.0" prefWidth="204.8" />
+                  <ColumnConstraints hgrow="SOMETIMES" maxWidth="351.2000122070312" minWidth="10.0" prefWidth="269.6" />
+                  <ColumnConstraints hgrow="SOMETIMES" maxWidth="242.5999755859375" minWidth="10.0" prefWidth="155.4000244140625" />
+              </columnConstraints>
+            </GridPane>
+         </content>
+      </ScrollPane>
+      <Label alignment="CENTER" layoutX="230.0" layoutY="205.0" prefHeight="26.0" prefWidth="178.0" text="File Size" textAlignment="CENTER" />
+      <Label alignment="CENTER" layoutX="8.0" layoutY="205.0" prefHeight="26.0" prefWidth="193.0" text="File URL" textAlignment="CENTER" />
+      <Label alignment="CENTER" layoutX="418.0" layoutY="205.0" prefHeight="26.0" prefWidth="246.0" text="Progress" textAlignment="CENTER" textFill="#a41d1d" />
+      <Label alignment="CENTER" layoutX="660.0" layoutY="203.0" prefHeight="35.0" prefWidth="162.0" text="Estimated tme" textAlignment="CENTER" />
+   </children>
+</AnchorPane>
