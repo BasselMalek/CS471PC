@@ -8,7 +8,7 @@ public class TestShell {
     public static void main(String[] args) throws IOException, InterruptedException, ExecutionException, URISyntaxException {
         ThreadPoolExecutor runner = new ThreadPoolExecutor(8, 16, 10000, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
 //       System.out.println(runner.submit(new FileDownloader("./test-files/test.txt", "./downloads/text.txt")));
-       System.out.println(runner.submit(new FileDownloader("http://127.0.0.1/test-files/testimg-1.jpg", "./downloads/")));
+       System.out.println(runner.submit(new FileDownloader("http://127.0.0.1/test-files/file.txt", "./downloads/")));
 //       System.out.println(runner.submit(new FileDownloader("http://127.0.0.1/test-files/lo.e", "./downloads/")));
 //       System.out.println(runner.submit(new FileDownloader("http://127.0.0.1/test-files/testimg-1.jpg", "./downloads/")));
 //       System.out.println(runner.submit(new FileDownloader("http://127.0.0.1/test-files/testimg-1.jpg", "./downloads/")));
