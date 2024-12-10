@@ -42,6 +42,7 @@ public class MainMenuController {
         private int selectedRowIndex = -1;
 
     public void initialize() {
+
         progressGrid.setOnMouseClicked(event -> {
             Node targetNode = (Node) event.getTarget();
             Integer row = GridPane.getRowIndex(targetNode);

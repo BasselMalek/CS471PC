@@ -8,100 +8,136 @@ import java.net.URISyntaxException;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static java.nio.file.StandardOpenOption.*;
 
 
-public class FileDownloader implements Callable<int[]> {
+public class FileDownloader implements Callable<DownloadEntry> {
     FTPClient checkerClient;
     final Integer ftpPort = 2121;
+    DownloadEntry receivedEntry;
+    Integer isFresh;
     URI sourceURI;
     String destinationPath;
     ArrayList<String> destinationFile;
     Long fileSize;
     ExecutorService segmentRunner;
     ArrayList<Long> segmentOffsets;
-    ArrayList<Boolean> segmentStates;
-    Integer retryAttempts = 5;
+    ArrayList<Future<Boolean>> segmentStates;
+    AtomicInteger retryAttempts;
+    Connection databaseConnection;
+    PreparedStatement updateDownloadStatement;
 
-
-    public FileDownloader(String uri, String dest) throws IOException, URISyntaxException {
+    public FileDownloader(Integer isFresh, DownloadEntry entry) throws IOException, URISyntaxException, SQLException {
+        this.receivedEntry = entry;
         this.checkerClient = new FTPClient();
-        this.sourceURI = new URI(uri);
-        this.destinationPath = dest;
+        this.isFresh = isFresh;
+        this.sourceURI = new URI(entry.sourcePath);
+        this.updateDownloadStatement = this.databaseConnection.prepareStatement("UPDATE downloads SET file_name = ?, file_type = ?, file_size = ?, " +
+                "file_url = ?, file_destination = ?, file_status = ?, download_offsets = ? WHERE id=?");
+        this.destinationPath = entry.destinationPath;
         this.destinationFile = getFileNameFromUri(this.sourceURI.getPath());
         this.segmentRunner = Executors.newFixedThreadPool(3);
+//        this.retryAttempts = new AtomicInteger(5);
     }
 
     @Override
-    public int[] call() throws IOException, ExecutionException, InterruptedException {
-
-        //Connect to FTP server.
-        checkerClient.connect(this.sourceURI.getHost(), this.ftpPort);
-        if (!checkerClient.login("anonymous", "")) {
-            return new int[]{0, 1};
-        }
-
-        //Validate the actual URI and disk space.
+    public DownloadEntry call() throws IOException {
         try {
-            this.fileSize = checkerClient.mlistFile(this.sourceURI.getPath()).getSize();
-        } catch (NullPointerException e) {
-            throw new RuntimeException("Invalid URI");
-        }
-        if (new File("C://").getUsableSpace() < this.fileSize) {
-            return new int[]{0, 1};
-        }
+            //Connect to FTP server.
+            checkerClient.connect(this.sourceURI.getHost(), this.ftpPort);
+            if (!checkerClient.login("anonymous", "")) {
+                return this.receivedEntry;
+            }
+
+            //Validate the actual URI and disk space.
+            try {
+                this.fileSize = checkerClient.mlistFile(this.sourceURI.getPath()).getSize();
+            } catch (NullPointerException e) {
+                throw new RuntimeException("Invalid URI");
+            }
+            if (new File("C://").getUsableSpace() < this.fileSize) {
+                return this.receivedEntry;
+            }
 
 //        //Divide file into parts and start the segments.
-        this.segmentOffsets = calculateOffsets();
-        checkerClient.logout();
-        checkerClient.disconnect();
-        this.segmentStates.set(0, this.segmentRunner.submit(new SegmentDownloader(this.sourceURI, this.destinationPath, this.fileSize, this.segmentOffsets.get(0))));
-        this.segmentStates.set(1, this.segmentRunner.submit(new SegmentDownloader(this.sourceURI, this.destinationPath, this.fileSize, this.segmentOffsets.get(1))));
-        this.segmentStates.set(2, this.segmentRunner.submit(new SegmentDownloader(this.sourceURI, this.destinationPath, this.fileSize, this.segmentOffsets.get(2))));
-//        //TODO: spawn new segments while you have attempts.
+            checkerClient.logout();
+            checkerClient.disconnect();
 
-        //Shutdown and kill.
-        this.segmentRunner.shutdown();
-        this.segmentRunner.awaitTermination(10000, TimeUnit.MILLISECONDS);
+            //Start download.
+            startDownload();
 
-        //Recombine
-        recombineParts();
-        return new int[]{0, 0};
+            Boolean f;
+            this.segmentStates.forEach((Future<Boolean> statePromise) -> {
+                try {
+                    if (f == null) {
+                        f = statePromise.get();
+                    } else {
+                        f = f & statePromise.get();
+                    }
+                } catch (InterruptedException | ExecutionException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+
+            //Shutdown and kill.
+            this.segmentRunner.shutdown();
+            this.segmentRunner.awaitTermination(10000, TimeUnit.MILLISECONDS);
+
+            if (!f) {
+                this.receivedEntry.downloadStatus = 3;
+                return this.receivedEntry;
+            }
+
+            //Recombine.
+            recombineParts();
+
+            //Update entry to be stored after termination.
+            this.receivedEntry.downloadStatus = 2;
+            this.segmentOffsets = null;
+        } catch (InterruptedException e) {
+            pauseDownload();
+        }
+        return this.receivedEntry;
     }
 
 
-    void pauseDownload() {
-        this.segmentRunner.shutdownNow();
+    void startDownload() {
+        if (this.segmentOffsets == null) {
+            this.segmentOffsets = calculateOffsets();
+        }
+        this.segmentStates.set(0, this.segmentRunner.submit(new SegmentDownloader(this.sourceURI, this.destinationPath,
+                this.fileSize, this.segmentOffsets.get(0))));
+        this.segmentStates.set(1, this.segmentRunner.submit(new SegmentDownloader(this.sourceURI, this.destinationPath,
+                this.fileSize, this.segmentOffsets.get(1))));
+        this.segmentStates.set(2, this.segmentRunner.submit(new SegmentDownloader(this.sourceURI, this.destinationPath,
+                this.fileSize, this.segmentOffsets.get(2))));
     }
 
-    ;
-
-    void launchSegment() {
+    synchronized void pauseDownload() {
+        try {
+            this.segmentRunner.shutdownNow();
+            this.segmentRunner.awaitTermination(3000, TimeUnit.MILLISECONDS);
+            this.receivedEntry.downloadStatus = 1;
+            this.receivedEntry.segmentOffsets = this.segmentOffsets;
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Segment workers couldn't close gracefully.");
+        }
     }
 
-    ;
-
-    void suspendSegment() {
-    }
-
-    ;
-
-    void retrySegment() {
-    }
 
     void recombineParts() {
         Path finalFile = Paths.get(this.destinationPath + this.destinationFile.getFirst() + "." + this.destinationFile.getLast());
-        ArrayList<Path> partFiles = new ArrayList<>(List.of(
-                Paths.get(this.destinationPath + this.destinationFile.getFirst() + "1.part"),
-                Paths.get(this.destinationPath + this.destinationFile.getFirst() + "2.part"),
-                Paths.get(this.destinationPath + this.destinationFile.getFirst() + "3.part")
-        ));
+        ArrayList<Path> partFiles = new ArrayList<>(List.of(Paths.get(this.destinationPath + this.destinationFile.getFirst() + "1.part"), Paths.get(this.destinationPath + this.destinationFile.getFirst() + "2.part"), Paths.get(this.destinationPath + this.destinationFile.getFirst() + "3.part")));
         try {
             FileChannel tunnelOut = FileChannel.open(finalFile, CREATE, WRITE);
             for (Path partFile : partFiles) {
