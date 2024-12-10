@@ -27,7 +27,7 @@ public class FileDownloader implements Callable<Boolean>{
     @Override
     public Boolean call() throws IOException {
 
-    }
+   return null; } //just so it can run
 
 
     void pauseDownload(){};
