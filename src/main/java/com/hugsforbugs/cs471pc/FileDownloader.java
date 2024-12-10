@@ -77,6 +77,7 @@ public class FileDownloader implements Callable<int[]> {
 
 
     void pauseDownload() {
+        this.segmentRunner.shutdownNow();
     }
 
     ;
@@ -114,6 +115,7 @@ public class FileDownloader implements Callable<int[]> {
                 }
                 tunnelIn.close();
             }
+            tunnelOut.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
