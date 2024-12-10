@@ -1,9 +1,11 @@
 package com.hugsforbugs.cs471pc;
 
+import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import org.apache.commons.net.ftp.FTPClient;
 import java.io.*;
-public class SegmentDownloader implements Callable<Boolean> {
+public class SegmentDownloader implements Callable<ArrayList<Integer>> {
+    private final Integer chunkSize = 8192;
     private FTPClient serverConn;
     private InputStream fileReader;
     private OutputStream fileWriter;

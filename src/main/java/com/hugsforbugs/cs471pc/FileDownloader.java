@@ -18,12 +18,12 @@ import static java.nio.file.StandardOpenOption.*;
 
 
 public class FileDownloader implements Callable<int[]> {
+    FTPClient checkerClient;
     final Integer ftpPort = 2121;
-    final Integer chunkSize = 8192;
     URI sourceURI;
     String destinationPath;
     ArrayList<String> destinationFile;
-    Long size = 12L;
+    Long fileSize;
     ExecutorService segmentRunner;
     ArrayList<Long> segmentOffsets;
     ArrayList<Boolean> segmentStates;
@@ -31,7 +31,7 @@ public class FileDownloader implements Callable<int[]> {
 
 
     public FileDownloader(String uri, String dest) throws IOException, URISyntaxException {
-//        anonClient = new FTPClient();
+        this.checkerClient = new FTPClient();
         this.sourceURI = new URI(uri);
         this.destinationPath = dest;
         this.destinationFile = getFileNameFromUri(this.sourceURI.getPath());
@@ -42,34 +42,33 @@ public class FileDownloader implements Callable<int[]> {
     public int[] call() throws IOException, ExecutionException, InterruptedException {
 
         //Connect to FTP server.
-//        FTPClient anonClient = new FTPClient();
-//        anonClient.connect(this.sourceURI.getHost(), this.ftpPort);
-//        if (!anonClient.login("anonymous", "")) {
-//            return new int[]{0, 1};
-//        }
-//
-//        //Validate the actual URI and disk space.
-//        try {
-//            this.size = anonClient.mlistFile(this.sourceURI.getPath()).getSize();
-//        } catch (NullPointerException e) {
-//            throw new RuntimeException("Invalid URI");
-//        }
-//        if (new File("C://").getUsableSpace() < this.size) {
-//            return new int[]{0, 1};
-//        }
-//
+        checkerClient.connect(this.sourceURI.getHost(), this.ftpPort);
+        if (!checkerClient.login("anonymous", "")) {
+            return new int[]{0, 1};
+        }
+
+        //Validate the actual URI and disk space.
+        try {
+            this.fileSize = checkerClient.mlistFile(this.sourceURI.getPath()).getSize();
+        } catch (NullPointerException e) {
+            throw new RuntimeException("Invalid URI");
+        }
+        if (new File("C://").getUsableSpace() < this.fileSize) {
+            return new int[]{0, 1};
+        }
+
 //        //Divide file into parts and start the segments.
         this.segmentOffsets = calculateOffsets();
-//        anonClient.logout();
-//        anonClient.disconnect();
-////        this.segmentStates.set(0, this.segmentRunner.submit(new SegmentDownloader()));
-////        this.segmentStates.set(1, this.segmentRunner.submit(new SegmentDownloader()));
-////        this.segmentStates.set(2, this.segmentRunner.submit(new SegmentDownloader()));
+        checkerClient.logout();
+        checkerClient.disconnect();
+        this.segmentStates.set(0, this.segmentRunner.submit(new SegmentDownloader(this.sourceURI, this.destinationPath, this.fileSize, this.segmentOffsets.get(0))));
+        this.segmentStates.set(1, this.segmentRunner.submit(new SegmentDownloader(this.sourceURI, this.destinationPath, this.fileSize, this.segmentOffsets.get(1))));
+        this.segmentStates.set(2, this.segmentRunner.submit(new SegmentDownloader(this.sourceURI, this.destinationPath, this.fileSize, this.segmentOffsets.get(2))));
 //        //TODO: spawn new segments while you have attempts.
-//
-//        //Shutdown and kill.
-//        this.segmentRunner.shutdown();
-//        this.segmentRunner.awaitTermination(10000, TimeUnit.MILLISECONDS);
+
+        //Shutdown and kill.
+        this.segmentRunner.shutdown();
+        this.segmentRunner.awaitTermination(10000, TimeUnit.MILLISECONDS);
 
         //Recombine
         recombineParts();
@@ -123,12 +122,12 @@ public class FileDownloader implements Callable<int[]> {
     private ArrayList<Long> calculateOffsets() {
         ArrayList<Long> calculatedResult = new ArrayList<>();
         calculatedResult.add(0, 0L);
-        calculatedResult.add(1, (long) (Math.ceil(this.size / 3D)));
-        calculatedResult.add(2, (long) (Math.ceil(this.size / 3D) * 2));
+        calculatedResult.add(1, (long) (Math.ceil(this.fileSize / 3D)));
+        calculatedResult.add(2, (long) (Math.ceil(this.fileSize / 3D) * 2));
         return calculatedResult;
     }
 
-    private ArrayList<String> getFileNameFromUri(String path) {
+    static protected ArrayList<String> getFileNameFromUri(String path) {
         Pattern filePattern = Pattern.compile("/([^/]+)\\.([^/.]+)$");
         Matcher fileFinder = filePattern.matcher(path);
         if (fileFinder.find()) {
