@@ -4,9 +4,9 @@
 
 
 .grid-pane {
-    -fx-background-color: #740938;
+    -fx-background-color: #4B5945;
     -fx-padding: 10;
-    -fx-border-color: #AF1740;
+    -fx-border-color: #66785F;
     -fx-border-width: 2;
 }
 
@@ -18,9 +18,9 @@
 }
 
 .button {
-    -fx-background-color: #740938;
+    -fx-background-color: #4B5945;
     -fx-text-fill: #FFFFFF;
-    -fx-border-color: #AF1740;
+    -fx-border-color: #66785F;
     -fx-border-width: 2;
     -fx-padding: 8;
     -fx-font-size: 14px;
@@ -30,13 +30,13 @@
 }
 
 .button:hover {
-    -fx-background-color: #AF1740;
+    -fx-background-color: #91AC8F;
     -fx-text-fill: #000000;
 }
 .text-field{
-    -fx-background-color: #740938;
+    -fx-background-color: #4B5945;
     -fx-text-fill: #FFFFFF;
-    -fx-border-color: #AF1740;
+    -fx-border-color: #66785F;
     -fx-border-width: 2;
     -fx-padding: 8;
     -fx-font-size: 14px;
@@ -46,9 +46,9 @@
     -fx-alignment: Center;
 }
 .progress-bar {
-    -fx-accent: #740938;
+    -fx-accent: #4B5945;
     -fx-control-inner-background: #1A1A1D;
-    -fx-border-color: #AF1740;
+    -fx-border-color: #66785F;
     -fx-border-radius: 5px;
     -fx-border-width: 2px;
     -fx-border-radius: 5px;
@@ -57,7 +57,7 @@
 
 .scroll-pane {
     -fx-background-color: #1A1A1D;
-    -fx-border-color: #CC2B52;
+    -fx-border-color: #91AC8F;
     -fx-border-width: 2;
     -fx-border-radius: 5;
     -fx-background-radius: 5;
@@ -69,16 +69,16 @@
 
 .scroll-pane .scroll-bar:horizontal,
 .scroll-pane .scroll-bar:vertical {
-    -fx-background-color: #CC2B52;
+    -fx-background-color: #91AC8F;
     -fx-border-radius: 5;
 }
 
 .scroll-pane .thumb {
-    -fx-background-color: #CC2B52;
+    -fx-background-color: #91AC8F;
     -fx-background-radius: 5;
 }
 .progress-bar:indeterminate {
-    -fx-accent: #CC2B52;
+    -fx-accent: #91AC8F;
 }
 .Delete-button:hover {
     -fx-background-color: #ff0000;
@@ -95,7 +95,7 @@
     -fx-padding: 10;
 }
 .dialog-pane .header-panel {
-    -fx-background-color: #740938;
+    -fx-background-color: #66785F;
     -fx-padding: 10;
 }
 .dialog-pane .header-panel .label {
@@ -109,7 +109,7 @@
     -fx-padding: 10;
 }
 .dialog-pane .button-bar .button {
-    -fx-background-color: #740938;
+    -fx-background-color: #66785F;
     -fx-text-fill: #ffffff;
     -fx-border-radius: 5;
     -fx-background-radius: 5;
@@ -118,7 +118,7 @@
     -fx-font-weight: bold;
 }
 .dialog-pane .button-bar .button:hover {
-    -fx-background-color: #AF1740;
+    -fx-background-color: #66785F;
 }
 .dialog-pane .header-panel .label{
     -fx-text-fill: #ffffff;
@@ -126,8 +126,10 @@
     -fx-font-size: 16px;
 }
 .dialog-pane .content{
-    -fx-text-fill: #AF1740;
+    -fx-text-fill: #ffffff;
     -fx-cell-size: 10px;
     -fx-font-size: 14px;
-
+}
+.alert{
+    --fxbackground-color: #66785F;
 }

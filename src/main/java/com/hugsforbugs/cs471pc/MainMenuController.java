@@ -1,25 +1,13 @@
 package com.hugsforbugs.cs471pc;
 
-import javafx.fxml.FXML;
-import javafx.geometry.Pos;
-import javafx.scene.control.Label;
-import javafx.scene.control.ProgressBar;
-import javafx.scene.control.TextField;
-import javafx.fxml.Initializable;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.VBox;
-import javafx.scene.control.TextInputDialog;
-import java.util.Optional;
-import javafx.scene.Scene;
-import javafx.scene.Parent;
-import javafx.fxml.FXML;
-import javafx.scene.control.ProgressBar;
-import javafx.scene.control.TextField;
-import javafx.scene.layout.GridPane;
-import javafx.scene.Node;
-import javafx.scene.layout.ColumnConstraints;
 
+import javafx.fxml.FXML;
+import javafx.scene.control.*;
+import javafx.scene.layout.GridPane;
+import java.util.Optional;
+import javafx.scene.control.ProgressBar;
+import javafx.scene.control.TextField;
+import javafx.scene.Node;
 
 
 public class MainMenuController {
@@ -28,8 +16,6 @@ public class MainMenuController {
         private Label size, EST;
         @FXML
         private TextInputDialog dialog;
-        @FXML
-        private TextField urlField;
         @FXML
         private TextField fieldUrl;
         @FXML
@@ -53,18 +39,85 @@ public class MainMenuController {
         });
     }
 
-        @FXML
-        public void addprompt(){
-                dialog = new TextInputDialog();
-                dialog.setTitle("Enter Download URL");
-                dialog.setHeaderText("New Download Entry");
-                dialog.setContentText("Please enter the URL:");
-                dialog.getDialogPane().getStylesheets().add(getClass().getResource("style.css").toExternalForm());
-                Optional<String> result = dialog.showAndWait();
-                result.ifPresent(url -> {
-                    addNewEntry(url);
-                });
+    @FXML
+    public void addbatch() {
+        dialog = new TextInputDialog();
+        dialog.setGraphic(null);
+        dialog.setTitle("Enter Download Details");
+        dialog.setHeaderText("New Download Entry");
+
+        // Create a custom layout with two TextFields
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+
+        TextField urlField = new TextField();
+        urlField.setPromptText("Enter URL");
+        TextField destinationField = new TextField();
+        destinationField.setPromptText("Enter Destination");
+
+        // Add fields to the grid
+        grid.add(new Label("URL:"), 0, 0);
+        grid.add(urlField, 1, 0);
+        grid.add(new Label("Destination:"), 0, 1);
+        grid.add(destinationField, 1, 1);
+
+        dialog.getDialogPane().setContent(grid);
+        dialog.getDialogPane().getStylesheets().add(getClass().getResource("style.css").toExternalForm());
+
+        // Show dialog and handle result
+        Optional<String> result = dialog.showAndWait();
+        if (result.isPresent()) {
+            String url = urlField.getText().trim();
+            String destination = destinationField.getText().trim();
+
+            if (url.isEmpty() || destination.isEmpty()) {
+                showAlert("Missing Information", "Both URL and Destination are required.");
+            } else {
+                addNewEntry(url);
             }
+        }
+    }
+
+    @FXML
+    public void addprompt() {
+        dialog = new TextInputDialog();
+        dialog.setGraphic(null);
+        dialog.setTitle("Enter Download Details");
+        dialog.setHeaderText("New Download Entry");
+
+        // Create a custom layout with two TextFields
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+
+        TextField urlField = new TextField();
+        urlField.setPromptText("Enter URL");
+        TextField destinationField = new TextField();
+        destinationField.setPromptText("Enter Destination");
+
+        // Add fields to the grid
+        grid.add(new Label("URL:"), 0, 0);
+        grid.add(urlField, 1, 0);
+        grid.add(new Label("Destination:"), 0, 1);
+        grid.add(destinationField, 1, 1);
+
+        dialog.getDialogPane().setContent(grid);
+        dialog.getDialogPane().getStylesheets().add(getClass().getResource("style.css").toExternalForm());
+
+        // Show dialog and handle result
+        Optional<String> result = dialog.showAndWait();
+        if (result.isPresent()) {
+            String url = urlField.getText().trim();
+            String destination = destinationField.getText().trim();
+
+            if (url.isEmpty() || destination.isEmpty()) {
+                showAlert("Missing Information", "Both URL and Destination are required.");
+            } else {
+                addNewEntry(url);
+            }
+        }
+    }
 
 
         @FXML
@@ -121,7 +174,7 @@ public class MainMenuController {
         for (Node node : progressGrid.getChildren()) {
             Integer row = GridPane.getRowIndex(node);
             if (row != null && row == rowIndex) {
-                node.setStyle("-fx-background-color: #740938;");
+                node.setStyle("-fx-background-color: #B2C9AD;");
             }
         }
     }
@@ -161,22 +214,37 @@ public class MainMenuController {
         for (Node node : nodes) {
             node.setOnMouseClicked(event -> {
                 progressGrid.getChildren().forEach(child -> child.setStyle(""));
-
-//                for (Node n : nodes) {
-//                    n.setStyle("-fx-background-color: lightblue;");
-//                }
-
                 selectedRowIndex = GridPane.getRowIndex(node);
             });
         }
-
-//        high();
     }
 
-        private void simulateDownload() {
+    private void simulateDownload() {
 
+    }
+
+    @FXML
+    public void pauseDownload() {
+        if (selectedRowIndex == -1) {
+            System.out.println("No row selected!");
+            return;
         }
+        //code
+        if (true) {
+            System.out.println("Download paused for row: " + selectedRowIndex);
+        } else {
+            System.out.println("No download found for row: " + selectedRowIndex);
+        }
+    }
 
-
+    private void showAlert(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.getDialogPane().getStylesheets().add(getClass().getResource("style.css").toExternalForm());
+        alert.setGraphic(null);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
 }
 
