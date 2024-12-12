@@ -8,6 +8,7 @@ module com.hugsforbugs.cs471pc {
     requires mysql.connector.j;
     requires java.sql;
     requires commons.io;
+    requires java.net.http;
 
     opens com.hugsforbugs.cs471pc to javafx.fxml;
     exports com.hugsforbugs.cs471pc;

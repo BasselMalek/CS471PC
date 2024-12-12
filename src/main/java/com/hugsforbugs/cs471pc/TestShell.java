@@ -10,7 +10,10 @@ public class TestShell {
     public static void main(String[] args) throws IOException, InterruptedException, ExecutionException, URISyntaxException, SQLException, ClassNotFoundException {
 //        Connection dbConn = new DatabaseConnection().getConnection();
         ThreadPoolExecutor runner = new ThreadPoolExecutor(8, 16, 10000, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
-       System.out.println(runner.submit(new FileDownloader(0, new DownloadEntry(0, "http://127.0.0.1/test-files/testimg-1.jpg", "./downloads/"))));
+       System.out.println(runner.submit(new FileDownloader(0,
+               new DownloadEntry(0, "https://download.jetbrains.com/idea/ideaIC-2024.3.1.exe", "./downloads/"))));
+//        System.out.println(runner.submit(new FileDownloader(0,
+//                new DownloadEntry(0, "https://unsplash.com/photos/Z9X8MQgt-kM/download?ixid=M3wxMjA3fDB8MXxhbGx8N3x8fHx8fHx8MTczMzk2ODgxMnw", "./downloads/"))));
 //       System.out.println(runner.submit(new FileDownloader(0, new DownloadEntry(0, "http://127.0.0.1/test-files/testimg-2.png", "./downloads/"))));
 //       System.out.println(runner.submit(new FileDownloader(0, new DownloadEntry(0, "http://127.0.0.1/test-files/test.txt", "./downloads/"))));
 //       System.out.println(runner.submit(new FileDownloader(null, new DownloadEntry())));
