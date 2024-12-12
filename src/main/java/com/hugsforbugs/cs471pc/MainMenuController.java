@@ -50,7 +50,7 @@ public class MainMenuController {
             Node targetNode = (Node) event.getTarget();
             Integer row = GridPane.getRowIndex(targetNode);
             if (row != null) {
-                System.out.println("Clicked on row: " + row);
+                System.out.println("Clicked on row: " + (row));
                 highlight(row);
                 this.selectedRowIndex = row;
             }
@@ -146,7 +146,6 @@ public class MainMenuController {
 
     @FXML
     public void addNewEntry(String name, String url, String destination) {
-        this.currentRow++;
         this.gridMappedEntries.put(this.currentRow, new DownloadEntry(0,name, url, destination));
 
 
@@ -191,6 +190,8 @@ public class MainMenuController {
 
 //        this.progressGrid.getChildren().addAll(this.entrySourceURI, this.entrySize, this.entryProgressBar, this.entryEST);
         addRowClickListener(this.entrySourceURI, this.entrySize, this.entryProgressBar, this.entryEST);
+        this.currentRow++;
+
     }
 
     private void highlight(int rowIndex) {
@@ -225,7 +226,7 @@ public class MainMenuController {
 
     @FXML
     public void startDownload() throws URISyntaxException {
-        this.downloadPool.submit(new FileDownloader(this.gridMappedEntries.get(this.currentRow), this.entryRows.get(this.currentRow)));
+        this.downloadPool.submit(new FileDownloader(this.gridMappedEntries.get(this.selectedRowIndex), this.entryRows.get(this.selectedRowIndex)));
     }
 
 

@@ -8,6 +8,9 @@ import java.time.Duration;
 import java.time.temporal.TemporalUnit;
 import java.util.concurrent.Callable;
 
+import javafx.application.Platform;
+import javafx.scene.Node;
+import javafx.scene.control.ProgressBar;
 import org.apache.commons.io.input.BoundedInputStream;
 import org.apache.commons.net.ftp.FTPClient;
 
@@ -27,15 +30,17 @@ public class SegmentDownloader implements Callable<Long> {
     private final String customFileName;
     private final Long startingOffset;
     private final Long boundingOffset;
+    private final ProgressBar progressBar;
     private Long progress;
 
-    public SegmentDownloader(int id, URI sourceURI, String destinationPath, String customFileName, Long startingOffset, Long boundingOffset) {
+    public SegmentDownloader(int id, URI sourceURI, String destinationPath, String customFileName, Long startingOffset, Long boundingOffset, Node progressBar) {
         this.id = id;
         this.sourceURI = sourceURI;
         this.destinationPath = destinationPath;
         this.customFileName = customFileName;
         this.startingOffset = startingOffset;
         this.boundingOffset = boundingOffset;
+        this.progressBar = (ProgressBar) progressBar;
     }
 
     @Override
@@ -65,6 +70,12 @@ public class SegmentDownloader implements Callable<Long> {
             while ((bufferBytes = fileReader.read(buffer)) != -1) {
                 fileWriter.write(buffer, 0, bufferBytes);
                 this.progress += bufferBytes;
+                synchronized (this.progressBar) {
+                    int finalBufferBytes = bufferBytes;
+                    Platform.runLater(() -> {
+                        this.progressBar.setProgress(this.progressBar.getProgress() + ((((double) finalBufferBytes / (this.boundingOffset - this.startingOffset))) / 3D));
+                    });
+                }
                 System.out.println("Thread" + this.hashCode() + " downloaded " + this.progress + "/" + (this.boundingOffset - this.startingOffset));
             }
 //
@@ -114,8 +125,7 @@ public class SegmentDownloader implements Callable<Long> {
 
     HttpResponse<InputStream> downloadOnHTTP() throws IOException, InterruptedException {
         this.serverHTTPConn = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
-        HttpResponse<InputStream> r = this.serverHTTPConn.send(HttpRequest.newBuilder().uri(this.sourceURI).headers("range", "bytes=" +
-                this.startingOffset + "-" + (this.boundingOffset - 1), "accept", "application/octet-stream", "accept-encoding", "identity").GET().build(), HttpResponse.BodyHandlers.ofInputStream());
+        HttpResponse<InputStream> r = this.serverHTTPConn.send(HttpRequest.newBuilder().uri(this.sourceURI).headers("range", "bytes=" + this.startingOffset + "-" + (this.boundingOffset - 1), "accept", "application/octet-stream", "accept-encoding", "identity").GET().build(), HttpResponse.BodyHandlers.ofInputStream());
         System.out.println(r.statusCode());
         return r;
     }

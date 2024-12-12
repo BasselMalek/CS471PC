@@ -1,6 +1,9 @@
 package com.hugsforbugs.cs471pc;
 
+import javafx.application.Platform;
 import javafx.scene.Node;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import org.apache.commons.net.ftp.FTPClient;
 
 import java.io.*;
@@ -29,6 +32,7 @@ public class FileDownloader implements Callable<DownloadEntry> {
     HttpClient checkerOnHTTPClient;
     final Integer ftpPort = 2121;
     DownloadEntry receivedEntry;
+    private final ArrayList<Node> rowGUI;
     Integer isFresh;
     Boolean isParallelizable = false;
     URI sourceURI;
@@ -39,10 +43,11 @@ public class FileDownloader implements Callable<DownloadEntry> {
     ArrayList<Long> segmentOffsets;
     ArrayList<Future<Long>> segmentStates;
     AtomicInteger retryAttempts;
-    private String customFileName = "test";
+    private String customFileName;
 
     public FileDownloader(DownloadEntry entry, ArrayList<Node> rowGUI) throws  URISyntaxException {
         this.receivedEntry = entry;
+        this.rowGUI = rowGUI;
         this.checkerOnFTPClient = new FTPClient();
         this.isFresh = isFresh;
         this.sourceURI = new URI(entry.sourcePath);
@@ -51,6 +56,7 @@ public class FileDownloader implements Callable<DownloadEntry> {
         this.destinationPath = entry.destinationPath;
 //        this.destinationFile = getFileNameFromUri(this.sourceURI.getPath());
         this.segmentRunner = Executors.newFixedThreadPool(3);
+        this.customFileName = entry.fileName;
 //        this.retryAttempts = new AtomicInteger(5);
     }
 
@@ -68,7 +74,7 @@ public class FileDownloader implements Callable<DownloadEntry> {
             }
 
             //Start download.
-            startDownload(this.sourceURI.getScheme());
+            startDownload();
             this.segmentRunner.shutdown();
             this.segmentRunner.awaitTermination(5, TimeUnit.MINUTES);
 
@@ -86,21 +92,24 @@ public class FileDownloader implements Callable<DownloadEntry> {
     }
 
 
-    void startDownload(String protocol) {
+    void startDownload() {
+        Platform.runLater(()->{
+            ((Label)this.rowGUI.getFirst()).setText(this.fileSize/1000000 + "MB");
+        });
         if (this.segmentOffsets == null) {
             this.segmentOffsets = calculateOffsets();
             this.segmentStates = new ArrayList<>();
         }
         if (this.segmentOffsets.size() == 2) {
             this.segmentRunner.submit(new SegmentDownloader(1, this.sourceURI, this.destinationPath, this.customFileName,
-                    this.segmentOffsets.get(0), this.segmentOffsets.get(1)));
+                    this.segmentOffsets.get(0), this.segmentOffsets.get(1), this.rowGUI.get(1)));
         } else {
             this.segmentRunner.submit(new SegmentDownloader(1, this.sourceURI, this.destinationPath, this.customFileName,
-                    this.segmentOffsets.get(0), this.segmentOffsets.get(1)));
+                    this.segmentOffsets.get(0), this.segmentOffsets.get(1), this.rowGUI.get(1)));
             this.segmentRunner.submit(new SegmentDownloader(2, this.sourceURI, this.destinationPath, this.customFileName,
-                    this.segmentOffsets.get(1), this.segmentOffsets.get(2)));
+                    this.segmentOffsets.get(1), this.segmentOffsets.get(2), this.rowGUI.get(1)));
             this.segmentRunner.submit(new SegmentDownloader(3, this.sourceURI, this.destinationPath, this.customFileName,
-                    this.segmentOffsets.get(2), this.segmentOffsets.get(3)));
+                    this.segmentOffsets.get(2), this.segmentOffsets.get(3), this.rowGUI.get(1)));
         }
     }
 
@@ -152,6 +161,7 @@ public class FileDownloader implements Callable<DownloadEntry> {
         //Validate the actual URI.
         try {
             this.fileSize = checkerOnFTPClient.mlistFile(this.sourceURI.getPath()).getSize();
+
             this.checkerOnFTPClient.logout();
             this.checkerOnFTPClient.disconnect();
         } catch (NullPointerException e) {
