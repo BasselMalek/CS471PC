@@ -12,13 +12,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class DownloadEntry {
     Integer downloadStatus;
+    String fileName;
     String sourcePath;
     String destinationPath;
     Long fileSize;
     ArrayList<Long> segmentOffsets;
     ArrayList<Future<Boolean>> segmentStates;
 
-    public DownloadEntry(Integer downloadStatus, String sourcePath, String destinationPath) {
+    public DownloadEntry(Integer downloadStatus,String filename,  String sourcePath, String destinationPath) {
+        this.fileName = filename;
         this.downloadStatus = downloadStatus;
         this.sourcePath = sourcePath;
         this.destinationPath = destinationPath;

@@ -1,5 +1,6 @@
 package com.hugsforbugs.cs471pc;
 
+import javafx.scene.Node;
 import org.apache.commons.net.ftp.FTPClient;
 
 import java.io.*;
@@ -40,7 +41,7 @@ public class FileDownloader implements Callable<DownloadEntry> {
     AtomicInteger retryAttempts;
     private String customFileName = "test";
 
-    public FileDownloader(Integer isFresh, DownloadEntry entry) throws IOException, URISyntaxException, SQLException {
+    public FileDownloader(DownloadEntry entry, ArrayList<Node> rowGUI) throws  URISyntaxException {
         this.receivedEntry = entry;
         this.checkerOnFTPClient = new FTPClient();
         this.isFresh = isFresh;
