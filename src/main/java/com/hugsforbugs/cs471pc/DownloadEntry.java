@@ -17,4 +17,12 @@ public class DownloadEntry {
     Long fileSize;
     ArrayList<Long> segmentOffsets;
     ArrayList<Future<Boolean>> segmentStates;
+
+    public DownloadEntry(Integer downloadStatus, String sourcePath, String destinationPath) {
+        this.downloadStatus = downloadStatus;
+        this.sourcePath = sourcePath;
+        this.destinationPath = destinationPath;
+    }
 }
+
+

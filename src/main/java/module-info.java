@@ -6,8 +6,8 @@ module com.hugsforbugs.cs471pc {
     requires org.kordamp.bootstrapfx.core;
     requires org.apache.commons.net;
     requires mysql.connector.j;
-    requires com.google.gson;
     requires java.sql;
+    requires commons.io;
 
     opens com.hugsforbugs.cs471pc to javafx.fxml;
     exports com.hugsforbugs.cs471pc;

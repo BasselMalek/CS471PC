@@ -1,102 +1,92 @@
 package com.hugsforbugs.cs471pc;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.net.URI;
 import java.util.concurrent.Callable;
-import org.apache.commons.net.ftp.FTPClient;
-import java.io.*;
-public class SegmentDownloader implements Callable<ArrayList<Integer>> {
-    private final Integer chunkSize = 8192;
-    private FTPClient serverConn;
-    private long fileSize;
-    private InputStream fileReader;
-    private OutputStream fileWriter;
-    private String uri;
-    private String dest;
-    private long offset;
 
-    public SegmentDownloader(String uri, String dest, long fileSize, long offset) {
-        this.uri = uri;
-        this.dest = dest;
-        this.fileSize = fileSize;
-        this.offset = offset;
+import org.apache.commons.io.input.BoundedInputStream;
+import org.apache.commons.net.ftp.FTP;
+import org.apache.commons.net.ftp.FTPClient;
+
+import java.io.*;
+
+public class SegmentDownloader implements Callable<Long> {
+    private final Integer chunkSize = 8192;
+    private final int id;
+    private final URI sourceURI;
+    private final String destinationPath;
+    private final FTPClient serverConn;
+    private BoundedInputStream fileReader;
+    private FileOutputStream fileWriter;
+    private File destinationFile;
+    private final Long startingOffset;
+    private final Long boundingOffset;
+
+    public SegmentDownloader(int id, URI sourceURI, String destinationPath, Long startingOffset, Long boundingOffset) {
+        this.id = id;
+        this.sourceURI = sourceURI;
+        this.destinationPath = destinationPath;
+        this.startingOffset = startingOffset;
+        this.boundingOffset = boundingOffset;
+        this.serverConn = new FTPClient();
+        this.serverConn.setDefaultPort(2121);
     }
 
     @Override
-    public ArrayList<Integer> call() {
+    public Long call() throws IOException {
         try {
 
-            serverConn.connect("localhost", 2121);
-            serverConn.login("admin", "admin");
-            serverConn.enterLocalPassiveMode();
+            connect();
+            this.serverConn.setRestartOffset(this.startingOffset);
+            InputStream serverStream = this.serverConn.retrieveFileStream(this.sourceURI.getPath());
 
-            fileReader = serverConn.retrieveFileStream(uri);
+            System.out.println("Got stream and skipped");
+            this.fileReader = new BoundedInputStream(serverStream, (this.boundingOffset - this.startingOffset));
+            this.fileReader.setPropagateClose(true);
+            this.destinationFile = new File((this.destinationPath + FileDownloader.getFileNameFromUri(this.sourceURI.getPath()).get(0) + this.id +".part"));
 
-            fileWriter = new FileOutputStream((new File(dest + ".part")), true);
+            this.destinationFile.createNewFile();
+             this.fileWriter = new FileOutputStream(this.destinationFile);
 
-            long bytesSkipped = fileReader.skip(offset);
-            if (bytesSkipped != offset) {
-                throw new IOException("Failed to seek to the specified offset.");
-            }
 
-            byte[] buffer = new byte[chunkSize];
+//            if (bytesSkipped != this.startingOffset) {
+//                throw new IOException("Failed to seek to the specified offset.");
+//            }
+
+            byte[] buffer = new byte[this.chunkSize];
             int bufferBytes;
-
             while ((bufferBytes = fileReader.read(buffer)) != -1) {
                 fileWriter.write(buffer, 0, bufferBytes);
-                offset += bufferBytes;
             }
 
             if (Thread.currentThread().isInterrupted()) {
                 throw new InterruptedException("Thread was interrupted");
             }
 
-            System.out.println("Download complete for: " + uri);
-            return new ArrayList<>(List.of(0));
+            return -1L;
 
         } catch (InterruptedException e) {
-            System.err.println("Download interrupted at offset: " + offset);
-            return new ArrayList<>(List.of(0, (int) offset));
+            this.fileWriter.close();
+            this.fileReader.close();
+            this.destinationFile.delete();
+            return this.startingOffset;
         } catch (IOException e) {
             System.err.println("Error during download: " + e.getMessage());
-            return new ArrayList<>(List.of(0, (int) offset));
+            return this.startingOffset;
         } finally {
             try {
-                if (fileReader != null) fileReader.close();
-                if (fileWriter != null) fileWriter.close();
+                if (this.fileReader != null) this.fileReader.close();
+                if (this.fileWriter != null) this.fileWriter.close();
             } catch (IOException e) {
                 System.err.println("Failed to close streams: " + e.getMessage());
             }
         }
     }
 
-    public void suspendSegment() {
-        try {
-            if (fileReader != null) fileReader.close();
-            if (fileWriter != null) fileWriter.close();
-
-            if (Thread.currentThread().isInterrupted()) {
-                throw new InterruptedException("Thread was interrupted");
-            }
-
-            System.out.println("Segment suspended at offset: " + offset);
-        } catch (IOException e) {
-            System.err.println("Error suspending segment: " + e.getMessage());
-        } catch (InterruptedException e) {
-            System.err.println("Download interrupted at offset: " + offset);
-            try (RandomAccessFile localFile = new RandomAccessFile(dest + ".part", "rw")) {
-                long fileLength = localFile.length();
-
-                if (fileLength > offset) {
-                    long lastChunkSize = fileLength - offset;
-                    offset -= lastChunkSize;
-                    localFile.setLength(offset);
-                    System.out.println("Last chunk removed. Updated offset: " + offset);
-                }
-            } catch (IOException ioExc) {
-                System.err.println("Error truncating file: " + ioExc.getMessage());
-            }
-        }
+     void connect() throws IOException {
+        this.serverConn.connect(this.sourceURI.getHost());
+        this.serverConn.login("anonymous", "");
+        this.serverConn.enterLocalPassiveMode();
+        this.serverConn.setFileType(2);
+        System.out.println(this.serverConn.getReplyString());
     }
 }
