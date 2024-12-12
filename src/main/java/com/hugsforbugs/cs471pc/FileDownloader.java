@@ -159,7 +159,7 @@ public class FileDownloader implements Callable<DownloadEntry> {
     }
 
     void validateOnHTTP() throws IOException, InterruptedException {
-        this.checkerOnHTTPClient = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
+        this.checkerOnHTTPClient = HttpClient.newBuilder().version(HttpClient.Version.HTTP_2).followRedirects(HttpClient.Redirect.NORMAL).build();
         HttpResponse<String> test = this.checkerOnHTTPClient.send(HttpRequest.newBuilder().uri(this.sourceURI).HEAD().build(), HttpResponse.BodyHandlers.ofString());
         this.fileSize = Long.parseLong(test.headers().allValues("content-length").getFirst());
         this.isParallelizable = !test.headers().allValues("accept-ranges").isEmpty();

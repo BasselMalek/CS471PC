@@ -27,6 +27,7 @@ public class SegmentDownloader implements Callable<Long> {
     private final String customFileName;
     private final Long startingOffset;
     private final Long boundingOffset;
+    private Long progress;
 
     public SegmentDownloader(int id, URI sourceURI, String destinationPath, String customFileName, Long startingOffset, Long boundingOffset) {
         this.id = id;
@@ -41,12 +42,12 @@ public class SegmentDownloader implements Callable<Long> {
     public Long call() throws IOException {
         try {
 
-
-//            connectFTP();
-            this.fileReader = new ByteArrayInputStream(downloadOnHTTP());
-
-
-            System.out.println("Got stream and skipped");
+            if (this.sourceURI.getScheme() == "ftp") {
+                connectOnFTP();
+                this.fileReader = downloadOnFTP();
+            } else {
+                this.fileReader = downloadOnHTTP().body();
+            }
 
             this.destinationFile = new File((this.destinationPath + this.customFileName + this.id + ".part"));
 //
@@ -60,8 +61,11 @@ public class SegmentDownloader implements Callable<Long> {
 
             byte[] buffer = new byte[this.chunkSize];
             int bufferBytes;
+            this.progress = 0L;
             while ((bufferBytes = fileReader.read(buffer)) != -1) {
                 fileWriter.write(buffer, 0, bufferBytes);
+                this.progress += bufferBytes;
+                System.out.println("Thread" + this.hashCode() + " downloaded " + this.progress + "/" + (this.boundingOffset - this.startingOffset));
             }
 //
 //            if (Thread.currentThread().isInterrupted()) {
@@ -105,15 +109,14 @@ public class SegmentDownloader implements Callable<Long> {
         InputStream serverStream = this.serverFTPConn.retrieveFileStream(this.sourceURI.getPath());
         BoundedInputStream resultantStream = new BoundedInputStream(serverStream, (this.boundingOffset - this.startingOffset));
         resultantStream.setPropagateClose(true);
-        return  resultantStream;
+        return resultantStream;
     }
 
-    byte[] downloadOnHTTP() throws IOException, InterruptedException {
+    HttpResponse<InputStream> downloadOnHTTP() throws IOException, InterruptedException {
         this.serverHTTPConn = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
-        HttpResponse<byte[]> r = this.serverHTTPConn.send(HttpRequest.newBuilder().uri(this.sourceURI).headers("range", "bytes=" +
-                this.startingOffset + "-" + (this.boundingOffset - 1), "accept", "application/octet-stream", "accept-encoding", "identity").GET().build(), HttpResponse.BodyHandlers.ofByteArray());
-        this.serverHTTPConn.close();
+        HttpResponse<InputStream> r = this.serverHTTPConn.send(HttpRequest.newBuilder().uri(this.sourceURI).headers("range", "bytes=" +
+                this.startingOffset + "-" + (this.boundingOffset - 1), "accept", "application/octet-stream", "accept-encoding", "identity").GET().build(), HttpResponse.BodyHandlers.ofInputStream());
         System.out.println(r.statusCode());
-        return r.body();
+        return r;
     }
 }
