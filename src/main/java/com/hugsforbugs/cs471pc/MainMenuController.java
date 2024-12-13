@@ -11,8 +11,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TextField;
@@ -37,8 +39,9 @@ public class MainMenuController {
     ExecutorService downloadPool;
     private int currentRow = 0;
     private final ArrayList<ArrayList<Node>> entryRows = new ArrayList<>();
-    private final  HashMap<Integer, DownloadEntry> gridMappedEntries = new HashMap<>();
+    private final HashMap<Integer, DownloadEntry> gridMappedEntries = new HashMap<>();
     private int selectedRowIndex = -1;
+    private ArrayList<Future<DownloadEntry>> runningDownloads = new ArrayList<>();
 
     public void initialize() {
         try {
@@ -146,22 +149,20 @@ public class MainMenuController {
 
     @FXML
     public void addNewEntry(String name, String url, String destination) {
-        this.gridMappedEntries.put(this.currentRow, new DownloadEntry(0,name, url, destination));
+        this.gridMappedEntries.put(this.currentRow, new DownloadEntry(0, name, url, destination));
 
 
         this.entrySourceURI = new TextField(url);
         this.entrySourceURI.setEditable(false);
         this.entrySourceURI.setPrefWidth(300.0);
 
-        this.entrySize = new Label("50000 Mb");
+        this.entrySize = new Label("....");
         this.entrySize.setPrefWidth(300.0);
 
 
         this.entryProgressBar = new ProgressBar(0.0);
         this.entryProgressBar.setPrefWidth(380.0);
 
-        this.entryEST = new Label("Where ETA");
-        this.entryEST.setPrefWidth(300.0);
 
 
 //            int textFieldColumn = 0;
@@ -185,11 +186,10 @@ public class MainMenuController {
         this.progressGrid.add(this.entrySourceURI, 0, this.currentRow);
         this.progressGrid.add(this.entrySize, 1, this.currentRow);
         this.progressGrid.add(this.entryProgressBar, 2, this.currentRow);
-        this.progressGrid.add(this.entryEST, 3, this.currentRow);
-        this.entryRows.add(new ArrayList<>(List.of(this.entrySize, this.entryProgressBar, this.entryEST)));
+        this.entryRows.add(new ArrayList<>(List.of(this.entrySize, this.entryProgressBar)));
 
 //        this.progressGrid.getChildren().addAll(this.entrySourceURI, this.entrySize, this.entryProgressBar, this.entryEST);
-        addRowClickListener(this.entrySourceURI, this.entrySize, this.entryProgressBar, this.entryEST);
+        addRowClickListener(this.entrySourceURI, this.entrySize, this.entryProgressBar);
         this.currentRow++;
 
     }
@@ -226,21 +226,19 @@ public class MainMenuController {
 
     @FXML
     public void startDownload() throws URISyntaxException {
-        this.downloadPool.submit(new FileDownloader(this.gridMappedEntries.get(this.selectedRowIndex), this.entryRows.get(this.selectedRowIndex)));
+        this.runningDownloads.add(this.selectedRowIndex, this.downloadPool.submit(new FileDownloader(this.gridMappedEntries.get(this.selectedRowIndex), this.entryRows.get(this.selectedRowIndex))));
     }
 
+    @FXML
+    public void pauseDownload() throws ExecutionException, InterruptedException {
+        if (this.selectedRowIndex == -1) {
+            System.out.println("No row selected!");
+            return;
+        }
+        this.runningDownloads.get(this.selectedRowIndex).cancel(true);
+        this.runningDownloads.remove(this.selectedRowIndex);
 
-//    private void high() {
-//        for (Node node : progressGrid.getChildren()) {
-//            node.setOnMouseEntered((MouseEvent t) -> {
-//                node.setStyle("-fx-background-color:#FFFF00;"); // Highlight yellow on hover
-//            });
-//
-//            node.setOnMouseExited((MouseEvent t) -> {
-//                node.setStyle("-fx-background-color:#dae7f3;"); // Revert to original color when hover ends
-//            });
-//        }
-//    }
+    }
 
     private void addRowClickListener(Node... nodes) {
         for (Node node : nodes) {
@@ -251,23 +249,6 @@ public class MainMenuController {
         }
     }
 
-    private void simulateDownload() {
-
-    }
-
-    @FXML
-    public void pauseDownload() {
-        if (this.selectedRowIndex == -1) {
-            System.out.println("No row selected!");
-            return;
-        }
-        //code
-        if (true) {
-            System.out.println("Download paused for row: " + selectedRowIndex);
-        } else {
-            System.out.println("No download found for row: " + selectedRowIndex);
-        }
-    }
 
     private void showAlert(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
