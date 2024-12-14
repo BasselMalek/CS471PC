@@ -9,42 +9,30 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="624.0" prefWidth="847.0" stylesheets="@style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.hugsforbugs.cs471pc.MainMenuController">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="624.0" prefWidth="847.0" stylesheets="@style.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.hugsforbugs.cs471pc.MainMenuController">
     <children>
-      <HBox alignment="CENTER" prefHeight="71.0" prefWidth="847.0" spacing="25.0">
-         <children>
-            <Button mnemonicParsing="false" onAction="#addprompt" prefHeight="40.0" prefWidth="145.0" text="Add" />
-            <Button mnemonicParsing="false" onAction="#startDownload" prefHeight="40.0" prefWidth="145.0" text="Start" />
-            <Button layoutX="434.0" layoutY="26.0" mnemonicParsing="false" onAction="#pauseDownload" prefHeight="40.0" prefWidth="145.0" text="Pause" />
-            <Button id="Delete-button" mnemonicParsing="false" onAction="#deleteSelectedRow" prefHeight="40.0" prefWidth="145.0" styleClass="Delete-button" text="Delete" />
-         </children>
-      </HBox>
-
-        <!-- Scrollable Table with Labels -->
-        <VBox layoutX="0.0" layoutY="80.0" prefHeight="544.0" prefWidth="847.0">
+        <ScrollPane layoutY="149.0" prefHeight="478.0" prefWidth="847.0">
+            <content>
+                <GridPane fx:id="progressGrid" prefHeight="616.0" prefWidth="834.0">
+                    <columnConstraints>
+                        <ColumnConstraints hgrow="SOMETIMES" maxWidth="246.4000244140625" minWidth="10.0" prefWidth="206.4000244140625" />
+                        <ColumnConstraints hgrow="SOMETIMES" maxWidth="272.8000122070313" minWidth="10.0" prefWidth="204.8" />
+                        <ColumnConstraints hgrow="SOMETIMES" maxWidth="351.2000122070312" minWidth="10.0" prefWidth="269.6" />
+                    </columnConstraints>
+                </GridPane>
+            </content>
+        </ScrollPane>
+        <HBox alignment="CENTER" prefHeight="71.0" prefWidth="847.0" spacing="25.0">
             <children>
-                <HBox alignment="CENTER">
-                    <children>
-                        <Label alignment="CENTER" prefHeight="26.0" prefWidth="193.0" text="File URL" textAlignment="CENTER" />
-                        <Label alignment="CENTER" prefHeight="26.0" prefWidth="178.0" text="File Size" textAlignment="CENTER" />
-                        <Label alignment="CENTER" prefHeight="26.0" prefWidth="246.0" text="Progress" textAlignment="CENTER" textFill="#a41d1d" />
-                        <Label alignment="CENTER" prefHeight="35.0" prefWidth="162.0" text="Estimated Time" textAlignment="CENTER" />
-                    </children>
-                </HBox>
-
-                <ScrollPane prefHeight="504.0" prefWidth="847.0">
-                    <content>
-                        <GridPane fx:id="progressGrid" prefHeight="495.0" prefWidth="834.0">
-                            <columnConstraints>
-                                <ColumnConstraints hgrow="SOMETIMES" maxWidth="246.4000244140625" minWidth="10.0" prefWidth="206.4000244140625" />
-                                <ColumnConstraints hgrow="SOMETIMES" maxWidth="272.8000122070313" minWidth="10.0" prefWidth="204.8" />
-                                <ColumnConstraints hgrow="SOMETIMES" maxWidth="351.2000122070312" minWidth="10.0" prefWidth="269.6" />
-                                <ColumnConstraints hgrow="SOMETIMES" maxWidth="242.5999755859375" minWidth="10.0" prefWidth="155.4000244140625" />
-                            </columnConstraints>
-                        </GridPane>
-                    </content>
-                </ScrollPane>
+                <Button mnemonicParsing="false" onAction="#addprompt" prefHeight="40.0" prefWidth="145.0" text="Add" />
+                <Button mnemonicParsing="false" onAction="#startDownload" prefHeight="40.0" prefWidth="145.0" text="Start" />
+                <Button layoutX="434.0" layoutY="26.0" mnemonicParsing="false" onAction="#pauseDownload" prefHeight="40.0" prefWidth="145.0" text="Pause" />
+                <Button id="Delete-button" mnemonicParsing="false" onAction="#deleteSelectedRow" prefHeight="40.0" prefWidth="145.0" styleClass="Delete-button" text="Delete" />
             </children>
-        </VBox>
+        </HBox>
+        <Label layoutY="129.0" prefHeight="20.0" prefWidth="261.0" text="File URL" />
+        <Label layoutX="298.0" layoutY="129.0" prefHeight="20.0" prefWidth="170.0" text="Size" />
+        <Label layoutX="557.0" layoutY="129.0" prefHeight="20.0" prefWidth="206.0" text="Progress" />
     </children>
 </AnchorPane>
+

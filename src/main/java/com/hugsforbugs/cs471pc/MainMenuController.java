@@ -22,7 +22,6 @@ import javafx.scene.Node;
 
 
 public class MainMenuController {
-
     @FXML
     private Label entrySize, entryEST;
     @FXML
@@ -139,7 +138,7 @@ public class MainMenuController {
             String destination = destinationField.getText().trim();
 
             if (url.isEmpty() || destination.isEmpty()) {
-                showAlert("Missing Information", "Both URL and Destination are required.");
+                showAlert("Missing Information", "ALL Fields Are Required.");
             } else {
                 addNewEntry(name, url, destination);
             }
@@ -226,7 +225,7 @@ public class MainMenuController {
 
     @FXML
     public void startDownload() throws URISyntaxException {
-        this.runningDownloads.add(this.selectedRowIndex, this.downloadPool.submit(new FileDownloader(this.gridMappedEntries.get(this.selectedRowIndex), this.entryRows.get(this.selectedRowIndex))));
+      //  this.runningDownloads.add(this.selectedRowIndex, this.downloadPool.submit(new FileDownloader(this.gridMappedEntries.get(this.selectedRowIndex), this.entryRows.get(this.selectedRowIndex))));
     }
 
     @FXML
