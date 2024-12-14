@@ -1,144 +1,166 @@
 package com.hugsforbugs.cs471pc;
 
 
+import com.mysql.cj.jdbc.MysqlXAConnection;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
+
+import java.lang.reflect.Array;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TextField;
 import javafx.scene.Node;
+import javafx.scene.layout.StackPane;
+import javafx.stage.Stage;
 
 
 public class MainMenuController {
+    @FXML
+    private Label entrySize, entryEST;
+    @FXML
+    private TextInputDialog dialog;
+    @FXML
+    private TextField entrySourceURI, maxfield;
+    @FXML
+    private ProgressBar entryProgressBar;
 
-        @FXML
-        private Label size, EST;
-        @FXML
-        private TextInputDialog dialog;
-        @FXML
-        private TextField fieldUrl;
-        @FXML
-        private ProgressBar progressBar;
+    @FXML
+    private GridPane progressGrid;
+    @FXML
 
-        @FXML
-        private GridPane progressGrid;
 
-        private int currentRow = 0;
-        private int selectedRowIndex = -1;
+    ExecutorService downloadPool;
+    private ArrayList<Future<DownloadEntry>> runningDownloads = new ArrayList<>();
+    private final ArrayList<ArrayList<Node>> entryRows = new ArrayList<>();
 
     public void initialize() {
-
-        progressGrid.setOnMouseClicked(event -> {
+        this.progressGrid.setOnMouseClicked(event -> {
             Node targetNode = (Node) event.getTarget();
             Integer row = GridPane.getRowIndex(targetNode);
             if (row != null) {
-                System.out.println("Clicked on row: " + row);
+                System.out.println("Clicked on row: " + (row));
                 highlight(row);
-                selectedRowIndex = row;
+//                this.selectedRowIndex = row;
             }
         });
     }
 
+
+
+    private boolean maxNumberSet = false;
+
     @FXML
-    public void addbatch() {
-        dialog = new TextInputDialog();
-        dialog.setGraphic(null);
-        dialog.setTitle("Enter Download Details");
-        dialog.setHeaderText("New Download Entry");
+    public void maxNumberOf() {
+        if (maxfield == null) {
+            maxfield = new TextField(); // Ensure maxfield is initialized
+        }
 
-        // Create a custom layout with two TextFields
-        GridPane grid = new GridPane();
-        grid.setHgap(10);
-        grid.setVgap(10);
-
-        TextField urlField = new TextField();
-        urlField.setPromptText("Enter URL");
-        TextField destinationField = new TextField();
-        destinationField.setPromptText("Enter Destination");
-
-        // Add fields to the grid
-        grid.add(new Label("URL:"), 0, 0);
-        grid.add(urlField, 1, 0);
-        grid.add(new Label("Destination:"), 0, 1);
-        grid.add(destinationField, 1, 1);
-
-        dialog.getDialogPane().setContent(grid);
-        dialog.getDialogPane().getStylesheets().add(getClass().getResource("style.css").toExternalForm());
-
-        // Show dialog and handle result
-        Optional<String> result = dialog.showAndWait();
-        if (result.isPresent()) {
-            String url = urlField.getText().trim();
-            String destination = destinationField.getText().trim();
-
-            if (url.isEmpty() || destination.isEmpty()) {
-                showAlert("Missing Information", "Both URL and Destination are required.");
+            if (maxfield.getText().trim().isEmpty()) {
+                showAlert("Missing Information", "You must add a number.");
+                maxNumberSet = false;
             } else {
-                addNewEntry(url);
+                try {
+                    int maxNumber = Integer.parseInt(maxfield.getText().trim());
+                    if (maxNumber <= 0) {
+                        showAlert("Invalid Input", "Number must be greater than 0.");
+                        maxNumberSet = false;
+                    } else {
+                        maxNumberSet = true; // Valid input
+                        try {
+                            this.downloadPool = Executors.newFixedThreadPool(Integer.parseInt(maxfield.getText().trim()));
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                        System.out.println("Max Number set to: " + maxNumber);
+                    }
+                } catch (NumberFormatException e) {
+                    showAlert("Invalid Input", "You must enter a valid number.");
+                    maxNumberSet = false;
+                }
             }
         }
-    }
+
 
     @FXML
     public void addprompt() {
-        dialog = new TextInputDialog();
-        dialog.setGraphic(null);
-        dialog.setTitle("Enter Download Details");
-        dialog.setHeaderText("New Download Entry");
+        if (!maxNumberSet){
+            showAlert("Invalid Input","Please Try To Enter A Vaild Number To Continue");
+            return;
+        }
+        this.dialog = new TextInputDialog();
+        this.dialog.setGraphic(null);
+        this.dialog.setTitle("Enter Download Details");
+        this.dialog.setHeaderText("New Download Entry");
 
         // Create a custom layout with two TextFields
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(10);
 
+        TextField nameField = new TextField();
+        nameField.setPromptText("Enter file name");
         TextField urlField = new TextField();
         urlField.setPromptText("Enter URL");
         TextField destinationField = new TextField();
         destinationField.setPromptText("Enter Destination");
 
         // Add fields to the grid
-        grid.add(new Label("URL:"), 0, 0);
-        grid.add(urlField, 1, 0);
-        grid.add(new Label("Destination:"), 0, 1);
-        grid.add(destinationField, 1, 1);
+        grid.add(new Label("Filename:"), 0, 0);
+        grid.add(nameField, 1, 0);
+        grid.add(new Label("URL:"), 0, 1);
+        grid.add(urlField, 1, 1);
+        grid.add(new Label("Destination:"), 0, 2);
+        grid.add(destinationField, 1, 2);
 
-        dialog.getDialogPane().setContent(grid);
-        dialog.getDialogPane().getStylesheets().add(getClass().getResource("style.css").toExternalForm());
+
+        this.dialog.getDialogPane().setContent(grid);
+        this.dialog.getDialogPane().getStylesheets().add(getClass().getResource("style.css").toExternalForm());
 
         // Show dialog and handle result
-        Optional<String> result = dialog.showAndWait();
+        Optional<String> result = this.dialog.showAndWait();
         if (result.isPresent()) {
+            String name = nameField.getText().trim();
             String url = urlField.getText().trim();
             String destination = destinationField.getText().trim();
 
             if (url.isEmpty() || destination.isEmpty()) {
-                showAlert("Missing Information", "Both URL and Destination are required.");
+                showAlert("Missing Information", "ALL Fields Are Required.");
             } else {
-                addNewEntry(url);
+                ;
+                openThreadWindowWithGrid(addNewEntry(name, url, destination), this.downloadPool,new DownloadEntry(0, name, url, destination));
             }
         }
     }
 
 
-        @FXML
-        public void addNewEntry(String url) {
-            currentRow++;
+
+    public GridPane addNewEntry(String name, String url, String destination) {
 
 
-            fieldUrl = new TextField(url);
-            fieldUrl.setEditable(false);
-            fieldUrl.setPrefWidth(300.0);
+        this.entrySourceURI = new TextField(url);
+        this.entrySourceURI.setEditable(false);
+        this.entrySourceURI.setPrefWidth(300.0);
 
-            size = new Label("50000 Mb");
-            size.setPrefWidth(300.0);
+        this.entrySize = new Label("....");
+        this.entrySize.setPrefWidth(300.0);
 
 
-            progressBar = new ProgressBar(0.0);
-            progressBar.setPrefWidth(380.0);
+        this.entryProgressBar = new ProgressBar(0.0);
+        this.entryProgressBar.setPrefWidth(380.0);
 
-            EST = new Label("10 mins");
-            EST.setPrefWidth(300.0);
 
 
 //            int textFieldColumn = 0;
@@ -158,21 +180,24 @@ public class MainMenuController {
 //            GridPane.setColumnIndex(EST, ESTColumn);
 //            GridPane.setRowIndex(EST, currentRow);
 
-            // lmaoooo all the above couldve been avoided
-            progressGrid.add(fieldUrl, 0, currentRow);
-            progressGrid.add(size, 1, currentRow);
-            progressGrid.add(progressBar, 2, currentRow);
-            progressGrid.add(EST, 3, currentRow);
+//        // lmaoooo all the above couldve been avoided
+        GridPane result = new GridPane();
+        result.add(this.entrySourceURI, 0, 0);
+        result.add(this.entrySize, 1, 0);
+        result.add(this.entryProgressBar, 2, 0);
+        return result;
+//        addRowClickListener(this.entrySourceURI, this.entrySize, this.entryProgressBar);
 
-            progressGrid.getChildren().addAll(fieldUrl,size, progressBar,EST);
-            addRowClickListener(fieldUrl,size, progressBar,EST);
-          // dummy method
-            simulateDownload();
-        }
+//        this.progressGrid.add(openThreadWindow(),3,0);
+
+//        this.progressGrid.getChildren().addAll(this.entrySourceURI, this.entrySize, this.entryProgressBar, this.entryEST);
+
+
+    }
 
     private void highlight(int rowIndex) {
-        progressGrid.getChildren().forEach(child -> child.setStyle(""));
-        for (Node node : progressGrid.getChildren()) {
+        this.progressGrid.getChildren().forEach(child -> child.setStyle(""));
+        for (Node node : this.progressGrid.getChildren()) {
             Integer row = GridPane.getRowIndex(node);
             if (row != null && row == rowIndex) {
                 node.setStyle("-fx-background-color: #B2C9AD;");
@@ -180,63 +205,15 @@ public class MainMenuController {
         }
     }
 
-    @FXML
-    public void deleteSelectedRow() {
-        if (selectedRowIndex == -1) {
-            System.out.println("No row selected!");
-            return;
-        }
-        progressGrid.getChildren().removeIf(node -> GridPane.getRowIndex(node) != null && GridPane.getRowIndex(node) == selectedRowIndex);
-        // Shift rows after deletion
-        for (Node node : progressGrid.getChildren()) {
-            Integer row = GridPane.getRowIndex(node);
-            if (row != null && row > selectedRowIndex) {
-                GridPane.setRowIndex(node, row - 1);
-            }
-        }
-        selectedRowIndex = -1;
-        currentRow--;
-    }
-
-
-//    private void high() {
-//        for (Node node : progressGrid.getChildren()) {
-//            node.setOnMouseEntered((MouseEvent t) -> {
-//                node.setStyle("-fx-background-color:#FFFF00;"); // Highlight yellow on hover
-//            });
-//
-//            node.setOnMouseExited((MouseEvent t) -> {
-//                node.setStyle("-fx-background-color:#dae7f3;"); // Revert to original color when hover ends
+//    private void addRowClickListener(Node... nodes) {
+//        for (Node node : nodes) {
+//            node.setOnMouseClicked(event -> {
+//                this.progressGrid.getChildren().forEach(child -> child.setStyle(""));
+//                this.selectedRowIndex = GridPane.getRowIndex(node);
 //            });
 //        }
 //    }
 
-    private void addRowClickListener(Node... nodes) {
-        for (Node node : nodes) {
-            node.setOnMouseClicked(event -> {
-                progressGrid.getChildren().forEach(child -> child.setStyle(""));
-                selectedRowIndex = GridPane.getRowIndex(node);
-            });
-        }
-    }
-
-    private void simulateDownload() {
-
-    }
-
-    @FXML
-    public void pauseDownload() {
-        if (selectedRowIndex == -1) {
-            System.out.println("No row selected!");
-            return;
-        }
-        //code
-        if (true) {
-            System.out.println("Download paused for row: " + selectedRowIndex);
-        } else {
-            System.out.println("No download found for row: " + selectedRowIndex);
-        }
-    }
 
     private void showAlert(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -247,5 +224,50 @@ public class MainMenuController {
         alert.setContentText(message);
         alert.showAndWait();
     }
+
+//    private Button openThreadWindow() {
+//        openthread.setOnAction(event -> {
+//            try {
+//                // Example: Load a new thread window
+//                FXMLLoader loader = new FXMLLoader(getClass().getResource("thread.fxml"));
+//                AnchorPane threadPane = loader.load();
+//
+//                // Set up a new stage
+//                Stage threadStage = new Stage();
+//                threadStage.setTitle("Thread Window");
+//                threadStage.setScene(new Scene(threadPane));
+//                threadStage.show();
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
+//        });
+//        openthread.fire();
+//        return openthread;
+
+    private void openThreadWindowWithGrid(GridPane gridPane, ExecutorService runningPool, DownloadEntry downloadEntry) {
+        try {
+
+            // Load the thread window FXML
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("thread.fxml"));
+            AnchorPane threadPane = loader.load();
+
+            // Access the ThreadController
+            ThreadController threadController = loader.getController();
+            threadController.setGridPane(gridPane, runningPool, downloadEntry); // Pass the GridPane
+
+            // Set up the thread window
+            Stage threadStage = new Stage();
+            threadStage.setTitle("Thread Window");
+            threadStage.setScene(new Scene(threadPane));
+            threadStage.show();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
 }
+
+
+
 
