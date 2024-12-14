@@ -1,8 +1,12 @@
 package com.hugsforbugs.cs471pc;
 
 
+import com.mysql.cj.jdbc.MysqlXAConnection;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
 
 import java.lang.reflect.Array;
@@ -19,6 +23,8 @@ import java.util.concurrent.Future;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TextField;
 import javafx.scene.Node;
+import javafx.scene.layout.StackPane;
+import javafx.stage.Stage;
 
 
 public class MainMenuController {
@@ -27,12 +33,14 @@ public class MainMenuController {
     @FXML
     private TextInputDialog dialog;
     @FXML
-    private TextField entrySourceURI;
+    private TextField entrySourceURI, maxfield;
     @FXML
     private ProgressBar entryProgressBar;
 
     @FXML
     private GridPane progressGrid;
+    @FXML
+    private Button openthread;
 
 
     ExecutorService downloadPool;
@@ -99,8 +107,42 @@ public class MainMenuController {
         }
     }
 
+
+    private boolean maxNumberSet = false;
+
+    @FXML
+    public void maxNumberOf() {
+        if (maxfield == null) {
+            maxfield = new TextField(); // Ensure maxfield is initialized
+        }
+
+            if (maxfield.getText().trim().isEmpty()) {
+                showAlert("Missing Information", "You must add a number.");
+                maxNumberSet = false;
+            } else {
+                try {
+                    int maxNumber = Integer.parseInt(maxfield.getText().trim());
+                    if (maxNumber <= 0) {
+                        showAlert("Invalid Input", "Number must be greater than 0.");
+                        maxNumberSet = false;
+                    } else {
+                        maxNumberSet = true; // Valid input
+                        System.out.println("Max Number set to: " + maxNumber);
+                    }
+                } catch (NumberFormatException e) {
+                    showAlert("Invalid Input", "You must enter a valid number.");
+                    maxNumberSet = false;
+                }
+            }
+        }
+
+
     @FXML
     public void addprompt() {
+        if (!maxNumberSet){
+            showAlert("Invalid Input","Please Try To Enter A Vaild Number To Continue");
+            return;
+        }
         this.dialog = new TextInputDialog();
         this.dialog.setGraphic(null);
         this.dialog.setTitle("Enter Download Details");
@@ -141,6 +183,7 @@ public class MainMenuController {
                 showAlert("Missing Information", "ALL Fields Are Required.");
             } else {
                 addNewEntry(name, url, destination);
+                openThreadWindowWithGrid(progressGrid);
             }
         }
     }
@@ -185,9 +228,11 @@ public class MainMenuController {
         this.progressGrid.add(this.entrySourceURI, 0, this.currentRow);
         this.progressGrid.add(this.entrySize, 1, this.currentRow);
         this.progressGrid.add(this.entryProgressBar, 2, this.currentRow);
-        this.entryRows.add(new ArrayList<>(List.of(this.entrySize, this.entryProgressBar)));
+//        this.progressGrid.add(openThreadWindow(),3,this.currentRow);
+       this.entryRows.add(new ArrayList<>(List.of(this.entrySize, this.entryProgressBar)));
 
 //        this.progressGrid.getChildren().addAll(this.entrySourceURI, this.entrySize, this.entryProgressBar, this.entryEST);
+
         addRowClickListener(this.entrySourceURI, this.entrySize, this.entryProgressBar);
         this.currentRow++;
 
@@ -258,5 +303,49 @@ public class MainMenuController {
         alert.setContentText(message);
         alert.showAndWait();
     }
+
+//    private Button openThreadWindow() {
+//        openthread.setOnAction(event -> {
+//            try {
+//                // Example: Load a new thread window
+//                FXMLLoader loader = new FXMLLoader(getClass().getResource("thread.fxml"));
+//                AnchorPane threadPane = loader.load();
+//
+//                // Set up a new stage
+//                Stage threadStage = new Stage();
+//                threadStage.setTitle("Thread Window");
+//                threadStage.setScene(new Scene(threadPane));
+//                threadStage.show();
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
+//        });
+//        openthread.fire();
+//        return openthread;
+
+    private void openThreadWindowWithGrid(GridPane gridPane) {
+        try {
+            // Load the thread window FXML
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("thread.fxml"));
+            AnchorPane threadPane = loader.load();
+
+            // Access the ThreadController
+            ThreadController threadController = loader.getController();
+            threadController.setGridPane(gridPane); // Pass the GridPane
+
+            // Set up the thread window
+            Stage threadStage = new Stage();
+            threadStage.setTitle("Thread Window");
+            threadStage.setScene(new Scene(threadPane));
+            threadStage.show();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
 }
+
+
+
 

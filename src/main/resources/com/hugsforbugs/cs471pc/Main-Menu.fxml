@@ -3,36 +3,35 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.RowConstraints?>
 
 <AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="624.0" prefWidth="847.0" stylesheets="@style.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.hugsforbugs.cs471pc.MainMenuController">
-    <children>
-        <ScrollPane layoutY="149.0" prefHeight="478.0" prefWidth="847.0">
-            <content>
-                <GridPane fx:id="progressGrid" prefHeight="616.0" prefWidth="834.0">
-                    <columnConstraints>
-                        <ColumnConstraints hgrow="SOMETIMES" maxWidth="246.4000244140625" minWidth="10.0" prefWidth="206.4000244140625" />
-                        <ColumnConstraints hgrow="SOMETIMES" maxWidth="272.8000122070313" minWidth="10.0" prefWidth="204.8" />
-                        <ColumnConstraints hgrow="SOMETIMES" maxWidth="351.2000122070312" minWidth="10.0" prefWidth="269.6" />
-                    </columnConstraints>
-                </GridPane>
-            </content>
-        </ScrollPane>
-        <HBox alignment="CENTER" prefHeight="71.0" prefWidth="847.0" spacing="25.0">
+        <children>
+              <GridPane fx:id="progressGrid" layoutX="590.0" layoutY="522.0" prefHeight="93.0" prefWidth="126.0">
+                  <columnConstraints>
+                      <ColumnConstraints hgrow="SOMETIMES" maxWidth="246.4000244140625" minWidth="10.0" prefWidth="206.4000244140625" />
+                      <ColumnConstraints hgrow="SOMETIMES" maxWidth="272.8000122070313" minWidth="10.0" prefWidth="204.8" />
+                      <ColumnConstraints hgrow="SOMETIMES" maxWidth="351.2000122070312" minWidth="10.0" prefWidth="269.6" />
+                  </columnConstraints>
+         <children>
+                  <ScrollPane prefHeight="59.0" prefWidth="76.0" />
+         </children>
+         <rowConstraints>
+            <RowConstraints />
+         </rowConstraints>
+              </GridPane>
+        <HBox alignment="CENTER" layoutX="-24.0" layoutY="324.0" prefHeight="71.0" prefWidth="847.0" spacing="25.0">
             <children>
-                <Button mnemonicParsing="false" onAction="#addprompt" prefHeight="40.0" prefWidth="145.0" text="Add" />
-                <Button mnemonicParsing="false" onAction="#startDownload" prefHeight="40.0" prefWidth="145.0" text="Start" />
-                <Button layoutX="434.0" layoutY="26.0" mnemonicParsing="false" onAction="#pauseDownload" prefHeight="40.0" prefWidth="145.0" text="Pause" />
-                <Button id="Delete-button" mnemonicParsing="false" onAction="#deleteSelectedRow" prefHeight="40.0" prefWidth="145.0" styleClass="Delete-button" text="Delete" />
+                <Button mnemonicParsing="false" onAction="#addprompt" prefHeight="122.0" prefWidth="187.0" text="Add" />
             </children>
         </HBox>
-        <Label layoutY="129.0" prefHeight="20.0" prefWidth="261.0" text="File URL" />
-        <Label layoutX="298.0" layoutY="129.0" prefHeight="20.0" prefWidth="170.0" text="Size" />
-        <Label layoutX="557.0" layoutY="129.0" prefHeight="20.0" prefWidth="206.0" text="Progress" />
+      <Label layoutX="60.0" layoutY="214.0" prefHeight="59.0" prefWidth="286.0" text="Max Number Of " />
+      <TextField fx:id="maxfield" layoutX="365.0" layoutY="223.0" prefHeight="41.0" prefWidth="314.0" promptText="Max Number" />
+      <Button layoutX="716.0" layoutY="223.0" mnemonicParsing="false" onAction="#maxNumberOf" prefHeight="23.0" prefWidth="82.0" text="Submit" />
     </children>
 </AnchorPane>
-

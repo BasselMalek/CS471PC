@@ -19,6 +19,7 @@ public class DownloadEntry {
     String destinationPath;
     ConcurrentHashMap<Integer, Long> segmentOffsets;
 
+
     public DownloadEntry(Integer downloadStatus,String filename,  String sourcePath, String destinationPath) {
         this.fileName = filename;
         this.downloadStatus = downloadStatus;
@@ -26,6 +27,7 @@ public class DownloadEntry {
         this.destinationPath = destinationPath;
         this.segmentOffsets = new ConcurrentHashMap<>();
     }
+
 }
 
 
