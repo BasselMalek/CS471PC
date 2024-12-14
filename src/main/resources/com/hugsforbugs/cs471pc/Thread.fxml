@@ -14,7 +14,7 @@
             <children>
                 <Button mnemonicParsing="false" onAction="#startDownload" prefHeight="40.0" prefWidth="145.0" text="Start" />
                 <Button layoutX="434.0" layoutY="26.0" mnemonicParsing="false" onAction="#pauseDownload" prefHeight="40.0" prefWidth="145.0" text="Pause" />
-                <Button id="Delete-button" mnemonicParsing="false" onAction="#deleteSelectedRow" prefHeight="40.0" prefWidth="145.0" styleClass="Delete-button" text="Delete" />
+                <Button id="Delete-button" mnemonicParsing="false"  prefHeight="40.0" prefWidth="145.0" styleClass="Delete-button" text="Delete" />
             </children>
         </HBox>
         <Label layoutX="-7.0" layoutY="149.0" prefHeight="20.0" prefWidth="261.0" text="File URL" />

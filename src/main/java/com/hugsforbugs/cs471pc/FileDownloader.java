@@ -1,6 +1,7 @@
 package com.hugsforbugs.cs471pc;
 
 import javafx.application.Platform;
+import javafx.collections.ObservableList;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
@@ -32,7 +33,7 @@ public class FileDownloader implements Callable<DownloadEntry> {
     HttpClient checkerOnHTTPClient;
     final Integer ftpPort = 2121;
     DownloadEntry receivedEntry;
-    private final ArrayList<Node> rowGUI;
+    private final ObservableList<Node> rowGUI;
     Boolean isParallelizable = false;
     URI sourceURI;
     String destinationPath;
@@ -44,7 +45,7 @@ public class FileDownloader implements Callable<DownloadEntry> {
     ArrayList<Future<Long>> segmentStates;
     private String customFileName;
 
-    public FileDownloader(DownloadEntry entry, ArrayList<Node> rowGUI) throws URISyntaxException {
+    public FileDownloader(DownloadEntry entry, ObservableList<Node> rowGUI) throws URISyntaxException {
         this.receivedEntry = entry;
         this.rowGUI = rowGUI;
         this.checkerOnFTPClient = new FTPClient();
@@ -103,19 +104,19 @@ public class FileDownloader implements Callable<DownloadEntry> {
 
     void startDownload() throws IOException {
         Platform.runLater(() -> {
-            ((Label) this.rowGUI.getFirst()).setText(this.fileSize / 1000000 + "MB");
+            ((Label) this.rowGUI.get(1)).setText(this.fileSize / 1000000 + "MB");
         });
         this.segmentOffsets = calculateOffsets();
         if (this.segmentOffsets.size() == 2) {
             this.segmentStates.add(this.segmentRunner.submit(new SegmentDownloader(1, this.sourceURI, this.destinationPath, this.destinationFile.getFirst(),
-                    this.segmentOffsets,this.segmentBounds.getLast(), this.rowGUI.get(1))));
+                    this.segmentOffsets,this.segmentBounds.getLast(), this.rowGUI.get(2))));
         } else {
             this.segmentStates.add(this.segmentRunner.submit(new SegmentDownloader(1, this.sourceURI, this.destinationPath, this.destinationFile.getFirst(),
-                    this.segmentOffsets,this.segmentBounds.get(0), this.rowGUI.get(1))));
+                    this.segmentOffsets,this.segmentBounds.get(0), this.rowGUI.get(2))));
             this.segmentStates.add(this.segmentRunner.submit(new SegmentDownloader(2, this.sourceURI, this.destinationPath, this.destinationFile.getFirst(),
-                    this.segmentOffsets, this.segmentBounds.get(1),this.rowGUI.get(1))));
+                    this.segmentOffsets, this.segmentBounds.get(1),this.rowGUI.get(2))));
             this.segmentStates.add(this.segmentRunner.submit(new SegmentDownloader(3, this.sourceURI, this.destinationPath, this.destinationFile.getFirst(),
-                    this.segmentOffsets,this.segmentBounds.get(2), this.rowGUI.get(1))));
+                    this.segmentOffsets,this.segmentBounds.get(2), this.rowGUI.get(2))));
         }
     }
 
@@ -157,7 +158,7 @@ public class FileDownloader implements Callable<DownloadEntry> {
                     position += tunnelIn.transferTo(position, maxCount, tunnelOut);
                 }
                 tunnelIn.close();
-//                partFile.toFile().delete();
+                partFile.toFile().delete();
             }
             tunnelOut.close();
         } catch (IOException e) {
