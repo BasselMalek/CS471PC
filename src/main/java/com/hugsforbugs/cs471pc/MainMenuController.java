@@ -15,10 +15,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TextField;
@@ -42,9 +39,11 @@ public class MainMenuController {
     @FXML
 
 
-    ExecutorService downloadPool;
-    private ArrayList<Future<DownloadEntry>> runningDownloads = new ArrayList<>();
-    private final ArrayList<ArrayList<Node>> entryRows = new ArrayList<>();
+    private ExecutorService downloadPool;
+    private Integer openedWindows = 0;
+    private Integer maxNumber;
+    private boolean maxNumberSet = false;
+
 
     public void initialize() {
         this.progressGrid.setOnMouseClicked(event -> {
@@ -60,44 +59,46 @@ public class MainMenuController {
 
 
 
-    private boolean maxNumberSet = false;
-
     @FXML
     public void maxNumberOf() {
         if (maxfield == null) {
             maxfield = new TextField(); // Ensure maxfield is initialized
         }
 
-            if (maxfield.getText().trim().isEmpty()) {
-                showAlert("Missing Information", "You must add a number.");
-                maxNumberSet = false;
-            } else {
-                try {
-                    int maxNumber = Integer.parseInt(maxfield.getText().trim());
-                    if (maxNumber <= 0) {
-                        showAlert("Invalid Input", "Number must be greater than 0.");
-                        maxNumberSet = false;
-                    } else {
-                        maxNumberSet = true; // Valid input
-                        try {
-                            this.downloadPool = Executors.newFixedThreadPool(Integer.parseInt(maxfield.getText().trim()));
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
-                        }
-                        System.out.println("Max Number set to: " + maxNumber);
-                    }
-                } catch (NumberFormatException e) {
-                    showAlert("Invalid Input", "You must enter a valid number.");
+        if (maxfield.getText().trim().isEmpty()) {
+            showAlert("Missing Information", "You must add a number.");
+            maxNumberSet = false;
+        } else {
+            try {
+                int maxNumber = Integer.parseInt(maxfield.getText().trim());
+                if (maxNumber <= 0) {
+                    showAlert("Invalid Input", "Number must be greater than 0.");
                     maxNumberSet = false;
+                } else {
+                    this.maxNumber = maxNumber;
+                    maxNumberSet = true; // Valid input
+                    try {
+                        this.downloadPool = Executors.newFixedThreadPool(maxNumber);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                    System.out.println("Max Number set to: " + maxNumber);
                 }
+            } catch (NumberFormatException e) {
+                showAlert("Invalid Input", "You must enter a valid number.");
+                maxNumberSet = false;
             }
         }
+    }
 
 
     @FXML
     public void addprompt() {
-        if (!maxNumberSet){
-            showAlert("Invalid Input","Please Try To Enter A Vaild Number To Continue");
+        if (!maxNumberSet) {
+            showAlert("Invalid Input", "Please Try To Enter A Valid Number To Continue");
+            return;
+        } else if (this.openedWindows >= this.maxNumber) {
+            showAlert("Error","All threads are busy, Please Try After One Finishes.");
             return;
         }
         this.dialog = new TextInputDialog();
@@ -136,15 +137,14 @@ public class MainMenuController {
             String url = urlField.getText().trim();
             String destination = destinationField.getText().trim();
 
+
             if (url.isEmpty() || destination.isEmpty()) {
                 showAlert("Missing Information", "ALL Fields Are Required.");
             } else {
-                ;
-                openThreadWindowWithGrid(addNewEntry(name, url, destination), this.downloadPool,new DownloadEntry(0, name, url, destination));
+                openThreadWindowWithGrid(addNewEntry(name, url, destination), this.downloadPool, new DownloadEntry(0, name, url, destination));
             }
         }
     }
-
 
 
     public GridPane addNewEntry(String name, String url, String destination) {
@@ -160,7 +160,6 @@ public class MainMenuController {
 
         this.entryProgressBar = new ProgressBar(0.0);
         this.entryProgressBar.setPrefWidth(380.0);
-
 
 
 //            int textFieldColumn = 0;
@@ -259,6 +258,13 @@ public class MainMenuController {
             Stage threadStage = new Stage();
             threadStage.setTitle("Thread Window");
             threadStage.setScene(new Scene(threadPane));
+            this.openedWindows += 1;
+            threadStage.setOnCloseRequest((e) -> {
+                if (threadController.runningDownloads==null || !threadController.runningDownloads.isDone()) {
+                    e.consume();
+                }
+                this.openedWindows -= 1;
+            });
             threadStage.show();
         } catch (Exception e) {
             e.printStackTrace();

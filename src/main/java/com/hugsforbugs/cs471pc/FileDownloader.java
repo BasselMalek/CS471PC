@@ -43,28 +43,23 @@ public class FileDownloader implements Callable<DownloadEntry> {
     ArrayList<Long> segmentBounds;
     ConcurrentHashMap<Integer, Long> segmentOffsets;
     ArrayList<Future<Long>> segmentStates;
-    private String customFileName;
 
     public FileDownloader(DownloadEntry entry, ObservableList<Node> rowGUI) throws URISyntaxException {
         this.receivedEntry = entry;
+        this.sourceURI = new URI(this.receivedEntry.sourcePath);
         this.rowGUI = rowGUI;
-        this.checkerOnFTPClient = new FTPClient();
-        this.sourceURI = new URI(entry.sourcePath);
-//        this.updateDownloadStatement = this.databaseConnection.prepareStatement("UPDATE downloads SET file_name = ?, file_type = ?, file_size = ?, " +
-//                "file_url = ?, file_destination = ?, file_status = ?, download_offsets = ? WHERE id=?");
         this.destinationPath = entry.destinationPath;
-//        this.destinationFile = getFileNameFromUri(this.sourceURI.getPath());
         this.segmentRunner = Executors.newFixedThreadPool(3);
-        this.customFileName = entry.fileName;
+        String[] splitType =entry.fileName.split("\\.");
+        this.destinationFile = new ArrayList<>(List.of(splitType[0], splitType[1]));
         this.segmentOffsets = this.receivedEntry.segmentOffsets;
         this.segmentStates = new ArrayList<>();
-//        this.retryAttempts = new AtomicInteger(5);
     }
 
     @Override
-    public DownloadEntry call() throws IOException, InterruptedException {
+    public DownloadEntry call() throws InterruptedException {
         try {
-            if (this.sourceURI.getScheme() == "ftp") {
+            if (this.sourceURI.getScheme().matches("ftp")) {
                 validateOnFTP();
 
             } else {
@@ -97,6 +92,9 @@ public class FileDownloader implements Callable<DownloadEntry> {
             pauseDownload();
             System.out.println("file paused");
             return this.receivedEntry;
+        } catch (IOException e) {
+            System.out.println("Server refused.");
+            return this.receivedEntry;
         }
         return this.receivedEntry;
     }
@@ -104,19 +102,19 @@ public class FileDownloader implements Callable<DownloadEntry> {
 
     void startDownload() throws IOException {
         Platform.runLater(() -> {
-            ((Label) this.rowGUI.get(1)).setText(this.fileSize / 1000000 + "MB");
+            ((Label) this.rowGUI.get(1)).setText(this.fileSize / 1000000.0 + "MB");
         });
         this.segmentOffsets = calculateOffsets();
-        if (this.segmentOffsets.size() == 2) {
+        if (!this.isParallelizable) {
             this.segmentStates.add(this.segmentRunner.submit(new SegmentDownloader(1, this.sourceURI, this.destinationPath, this.destinationFile.getFirst(),
-                    this.segmentOffsets,this.segmentBounds.getLast(), this.rowGUI.get(2))));
+                    this.segmentOffsets, this.segmentBounds.getLast(), this.rowGUI.get(2))));
         } else {
             this.segmentStates.add(this.segmentRunner.submit(new SegmentDownloader(1, this.sourceURI, this.destinationPath, this.destinationFile.getFirst(),
-                    this.segmentOffsets,this.segmentBounds.get(0), this.rowGUI.get(2))));
+                    this.segmentOffsets, this.segmentBounds.get(0), this.rowGUI.get(2))));
             this.segmentStates.add(this.segmentRunner.submit(new SegmentDownloader(2, this.sourceURI, this.destinationPath, this.destinationFile.getFirst(),
-                    this.segmentOffsets, this.segmentBounds.get(1),this.rowGUI.get(2))));
+                    this.segmentOffsets, this.segmentBounds.get(1), this.rowGUI.get(2))));
             this.segmentStates.add(this.segmentRunner.submit(new SegmentDownloader(3, this.sourceURI, this.destinationPath, this.destinationFile.getFirst(),
-                    this.segmentOffsets,this.segmentBounds.get(2), this.rowGUI.get(2))));
+                    this.segmentOffsets, this.segmentBounds.get(2), this.rowGUI.get(2))));
         }
     }
 
@@ -168,6 +166,8 @@ public class FileDownloader implements Callable<DownloadEntry> {
 
     void validateOnFTP() throws IOException, InterruptedException {
         //Connect to FTP server.
+        this.checkerOnFTPClient = new FTPClient();
+        this.isParallelizable = true;
         this.checkerOnFTPClient.connect(this.sourceURI.getHost(), this.ftpPort);
         if (!checkerOnFTPClient.login("anonymous", "")) {
             throw new InterruptedException("Access to selected resource denied.");
@@ -186,27 +186,29 @@ public class FileDownloader implements Callable<DownloadEntry> {
     void validateOnHTTP() throws IOException, InterruptedException {
         this.checkerOnHTTPClient = HttpClient.newBuilder().version(HttpClient.Version.HTTP_2).followRedirects(HttpClient.Redirect.NORMAL).build();
         HttpResponse<String> test = this.checkerOnHTTPClient.send(HttpRequest.newBuilder().uri(this.sourceURI).HEAD().build(), HttpResponse.BodyHandlers.ofString());
+        if (test.statusCode() > 399) {
+            throw new IOException();
+        }
         this.fileSize = Long.parseLong(test.headers().allValues("content-length").getFirst());
         this.isParallelizable = !test.headers().allValues("accept-ranges").isEmpty();
-        String[] splitType = this.customFileName.split("\\.");
-        this.destinationFile = new ArrayList<>(List.of(splitType[0], splitType[1]));
+
         this.checkerOnHTTPClient.close();
     }
 
     private ConcurrentHashMap<Integer, Long> calculateOffsets() throws IOException {
-        this.segmentBounds = new ArrayList<>(List.of(((long) (Math.ceil(this.fileSize / 3D))),  ((long) (Math.ceil(this.fileSize / 3D)*2)), this.fileSize));
+        this.segmentBounds = new ArrayList<>(List.of(((long) (Math.ceil(this.fileSize / 3D))), ((long) (Math.ceil(this.fileSize / 3D) * 2)), this.fileSize));
         if (this.receivedEntry.downloadStatus == 1) {
             System.out.println("resumed");
             for (int i = 0; i < this.segmentOffsets.size(); i++) {
-                RandomAccessFile checker = new RandomAccessFile(this.destinationPath + this.destinationFile.getFirst() + (i+1)+".part", "r");
-                this.segmentOffsets.put(i, (i*(fileSize/3L))+checker.length());
+                RandomAccessFile checker = new RandomAccessFile(this.destinationPath + this.destinationFile.getFirst() + (i + 1) + ".part", "r");
+                this.segmentOffsets.put(i, (i * (fileSize / 3L)) + checker.length());
                 checker.close();
             }
             return this.segmentOffsets;
         }
         System.out.println("fresh");
         ConcurrentHashMap<Integer, Long> calculatedResult = new ConcurrentHashMap<>();
-            calculatedResult.put(0, 0L);
+        calculatedResult.put(0, 0L);
         if (this.isParallelizable) {
             calculatedResult.put(1, (long) (Math.ceil(this.fileSize / 3D)));
             calculatedResult.put(2, (long) (Math.ceil(this.fileSize / 3D) * 2));

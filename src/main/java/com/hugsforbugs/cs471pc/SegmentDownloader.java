@@ -54,7 +54,7 @@ public class SegmentDownloader implements Callable<Long> {
                 throw new InterruptedException("Thread was interrupted before starting download");
             }
 
-            if (this.sourceURI.getScheme().equals("ftp")) {
+            if (this.sourceURI.getScheme().matches("ftp")) {
                 connectOnFTP();
                 this.fileReader = downloadOnFTP();
             } else {
@@ -90,6 +90,11 @@ public class SegmentDownloader implements Callable<Long> {
             return pauseSegment();
         } finally {
             try {
+                if (this.serverHTTPConn != null) this.serverHTTPConn.close();
+                if (this.serverFTPConn != null){
+                    this.serverFTPConn.logout();
+                    this.serverFTPConn.disconnect();
+                }
                 if (this.fileReader != null) this.fileReader.close();
                 if (this.fileWriter != null) this.fileWriter.close();
             } catch (IOException e) {
